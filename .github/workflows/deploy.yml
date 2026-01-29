@@ -23,7 +23,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-         script: |
+        
+          script: |
               set -e
             
               cd /home/ec2-user
