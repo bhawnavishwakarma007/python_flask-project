@@ -1,27 +1,41 @@
-script: |
+name: Flask Deploy
 
-  sudo apt update
-  sudo apt install -y git python3-pip python3-venv
+on:
+  push:
+    branches: [ main ]
 
-  cd /home/ubuntu
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-  git clone https://github.com/bhawnavishwakarma007/python_flask-project.git || true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  cd python_flask-project
+      - name: Deploy to Amazon Linux EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_KEY }}
+          script: |
 
-  git pull origin main
+            sudo yum update -y
+            sudo yum install -y git python3-pip
 
-  # Create virtual environment (only first time)
-  python3 -m venv venv || true
+            cd /home/ec2-user
 
-  # Activate venv
-  source venv/bin/activate
+            # Clone if missing
+            if [ ! -d "python_flask-project" ]; then
+              git clone https://github.com/bhawnavishwakarma007/python_flask-project.git
+            fi
 
-  # Install dependencies inside venv
-  pip install -r requirements.txt
+            cd python_flask-project
+            git pull origin main
 
-  # Kill old app
-  pkill -f app.py || true
+            pip3 install --upgrade pip
+            pip3 install -r requirements.txt
 
-  # Run app from venv python
-  nohup venv/bin/python app.py > flask.log 2>&1 &
+            pkill -f app.py || true
+
+            nohup python3 app.py > flask.log 2>&1 &
