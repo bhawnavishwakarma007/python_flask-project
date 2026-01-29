@@ -49,7 +49,7 @@ jobs:
             ./venv/bin/pip install -r requirements.txt
 
             echo "Stopping old Flask app..."
-            pkill -9 -f app.py || true
+            pkill -f app.py || true
 
             echo "Starting Flask app..."
             nohup ./venv/bin/python app.py > flask.log 2>&1 &
