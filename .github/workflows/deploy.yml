@@ -23,29 +23,27 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
-          script: |
-            set -e
-
-            cd /home/ec2-user
-
-            # Clone repo if first time
-            if [ ! -d "python_flask-project" ]; then
-              git clone https://github.com/bhawnavishwakarma007/python_flask-project.git
-            fi
-
-            cd python_flask-project
-            git pull origin main
-
-            # Create virtual env if missing
-            if [ ! -d "venv" ]; then
-              python3 -m venv venv
-            fi
-
-            ./venv/bin/pip install -r requirements.txt
-
-            echo "Starting Flask app..."
-
-            # Start Flask ONLY ONCE
-            nohup ./venv/bin/python app.py > flask.log 2>&1 &
-
-            echo "Deployment Finished ✅"
+         script: |
+              set -e
+            
+              cd /home/ec2-user
+            
+              # Clone repo if first time
+              if [ ! -d "python_flask-project" ]; then
+                git clone https://github.com/bhawnavishwakarma007/python_flask-project.git
+              fi
+            
+              cd python_flask-project
+              git pull origin main
+            
+              echo "Installing dependencies globally..."
+            
+              # Install globally
+              sudo pip3 install -r requirements.txt
+            
+              echo "Starting Flask app..."
+            
+              # Start app
+              nohup python3 app.py > flask.log 2>&1 &
+            
+              echo "Deployment Finished ✅"
