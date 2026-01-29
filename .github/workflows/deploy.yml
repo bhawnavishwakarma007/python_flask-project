@@ -1,56 +1,57 @@
-name: Flask Deploy
+name: Deploy Flask App
 
 on:
   push:
-    branches: [ main ]
-    #workflow_dispatch:   # ✅ Manual trigger only
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1 # change if needed
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Deploy to Amazon Linux EC2
+      - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           script: |
+            set -e
 
-            sudo yum update -y
-            sudo yum install -y git python3
-            
-            cd /home/ec2-user
-            
-            # Clone if missing
-            if [ ! -d "python_flask-project" ]; then
-              git clone https://github.com/bhawnavishwakarma007/python_flask-project.git
+            APP_DIR="/home/ec2-user/python_flask-project"
+
+            echo "Starting deployment..."
+
+            # Clone repository if it does not exist
+            if [ ! -d "$APP_DIR" ]; then
+              git clone https://github.com/bhawnavishwakarma007/python_flask-project.git $APP_DIR
             fi
-            
-            cd python_flask-project
+
+            cd $APP_DIR
+
+            echo "Pulling latest code..."
             git pull origin main
-            
-            # Create venv if not exists
+
+            # Create virtual environment if missing
             if [ ! -d "venv" ]; then
               python3 -m venv venv
             fi
-            
-            source venv/bin/activate
-            
-            pip install --upgrade pip
-            pip install -r requirements.txt
-            
-            # Kill old app
-            pkill -f app.py || true
-            
-            # Start Flask
-            nohup venv/bin/python app.py > flask.log 2>&1 &
+
+            echo "Installing dependencies..."
+            ./venv/bin/pip install -r requirements.txt
+
+            echo "Stopping old Flask app..."
+            pkill -9 -f app.py || true
+
+            echo "Starting Flask app..."
+            nohup ./venv/bin/python app.py > flask.log 2>&1 &
+
+            echo "Deployment completed successfully."
