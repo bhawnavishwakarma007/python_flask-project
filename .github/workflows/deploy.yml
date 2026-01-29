@@ -14,10 +14,10 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1 # change if needed
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Deploy to EC2 via SSH
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -27,27 +27,25 @@ jobs:
             set -e
 
             cd /home/ec2-user
-            
-            # clone once
+
+            # Clone repo if first time
             if [ ! -d "python_flask-project" ]; then
               git clone https://github.com/bhawnavishwakarma007/python_flask-project.git
             fi
-            
+
             cd python_flask-project
             git pull origin main
-            
-            # create venv once
+
+            # Create virtual env if missing
             if [ ! -d "venv" ]; then
               python3 -m venv venv
             fi
-            
-            ./venv/bin/pip install -r requirements.txt
-            
-            # just start the app
-            nohup ./venv/bin/python app.py > flask.log 2>&1 &
 
+            ./venv/bin/pip install -r requirements.txt
 
             echo "Starting Flask app..."
+
+            # Start Flask ONLY ONCE
             nohup ./venv/bin/python app.py > flask.log 2>&1 &
 
-            echo "Deployment completed successfully."
+            echo "Deployment Finished ✅"
